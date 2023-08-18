@@ -1,0 +1,93 @@
+.section .data
+
+input_x_prompt	:	.asciz	"Please enter x: "
+input_y_prompt	:	.asciz	"Please enter y: "
+input_spec	:	.asciz	"%d"
+result		:	.asciz	"x^y = %d\n"
+
+.section .text
+
+.global main
+
+main:
+
+# add code and other labels here
+	/* x */
+	ldr x0, =input_x_prompt //print enter x
+	bl printf
+
+	sub sp, sp, #16
+	ldr x0, =input_spec //enter x
+	mov x1, sp
+	bl scanf
+
+	ldrsb x19, [sp, #0]
+	add sp, sp, #16
+
+
+	/*  y */
+
+	ldr x0, =input_y_prompt //print enter y
+	bl printf
+
+	sub sp, sp, #24
+	ldr x0, =input_spec //enter y
+	mov x1, sp
+	bl scanf
+
+	ldrsb x20, [sp, #0]
+	add sp, sp, #24
+	mov x0, x19 //x
+	mov x1, x20 //y
+	bl power
+
+	ldr x0, =result	
+	bl printf
+
+	b exit
+
+power: 
+/////// Base Cases ///////
+	// x = 0, return 0
+	subs x10, x0, #0
+    b.ne second
+	mov x1, XZR
+    br x30
+	// y < 0, return 0
+second:
+ 	subs x10, x1, #0 //(not negative, random positive number)
+    b.ge third
+	mov x1, XZR
+    br x30
+	//y = 0, return 1
+third:
+	subs x10, x1, #0
+    b.ne recursive
+	mov x1, #1
+    br x30
+
+recursive:	
+	sub SP, SP, #16 //x
+	sub SP, SP, #24 //y
+	//return address
+	stur x30, [SP, #8] 
+	stur x29, [SP, #0]
+
+	Sub x1, x1, #1
+	bl power //calls power function
+
+	ldur x30, [SP, #8] //return address
+	ldur x29, [SP, #0] //
+
+	mul x1, x1, x0
+	add SP, SP, #16
+	add SP, SP, #24
+
+	br x30
+
+# branch to this label on program completion
+exit:
+	mov x0, 0
+	mov x8, 93
+	svc 0
+	ret
